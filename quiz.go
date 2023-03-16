@@ -6,9 +6,29 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
+	timer := time.NewTimer(2 * time.Second)
+	records := getQuestions()
+
+	go quizLoop(records)
+
+	<-timer.C
+
+	// fmt.Fprintf(os.Stdout, "Correct %v out of %v\n", correctAnswers, len(records))
+}
+
+func quizLoop(records [][]string) {
+	for _, record := range records {
+		question, answer := record[0], record[1]
+		fmt.Print(question, "= ")
+		checkAnswer(answer)
+	}
+}
+
+func getQuestions() [][]string {
 	file, er := os.Open("problems.csv")
 	logAndExitIfError(er)
 
@@ -16,16 +36,7 @@ func main() {
 
 	records, er := reader.ReadAll()
 	logAndExitIfError(er)
-	correctAnswers := 0
-	current := 0
-	for _, record := range records {
-		question, answer := record[0], record[1]
-		fmt.Print(question, "= ")
-		correctAnswers += checkAnswer(answer)
-		current++
-	}
-
-	fmt.Fprintf(os.Stdout, "Correct %v out of %v\n", correctAnswers, current)
+	return records
 }
 
 // Returns 1 when correct answer, 0 otherwise.
