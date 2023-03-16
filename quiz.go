@@ -10,21 +10,33 @@ import (
 )
 
 func main() {
-	timer := time.NewTimer(2 * time.Second)
+	timer := time.NewTimer(360 * time.Second)
 	records := getQuestions()
 
-	go quizLoop(records)
+	answersChannel := make(chan int)
 
-	<-timer.C
+	go quizLoop(records, answersChannel)
 
-	// fmt.Fprintf(os.Stdout, "Correct %v out of %v\n", correctAnswers, len(records))
+	total := 0
+
+	for {
+		select {
+		case a := <-answersChannel:
+			total += a
+		case <-timer.C:
+			fmt.Println(
+				fmt.Sprintf("\nYour score: %v/%v", total, len(records)),
+			)
+			return
+		}
+	}
 }
 
-func quizLoop(records [][]string) {
+func quizLoop(records [][]string, answersChannel chan int) {
 	for _, record := range records {
 		question, answer := record[0], record[1]
 		fmt.Print(question, "= ")
-		checkAnswer(answer)
+		answersChannel <- checkAnswer(answer)
 	}
 }
 
