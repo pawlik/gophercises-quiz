@@ -14,8 +14,9 @@ func main() {
 	records := getQuestions()
 
 	answersChannel := make(chan int)
+	done := make(chan bool)
 
-	go quizLoop(records, answersChannel)
+	go quizLoop(records, answersChannel, done)
 
 	total := 0
 
@@ -25,6 +26,13 @@ func main() {
 			total += a
 		case <-timer.C:
 			fmt.Println(
+				"Times up!",
+				fmt.Sprintf("\nYour score: %v/%v", total, len(records)),
+			)
+			return
+		case <-done:
+			fmt.Println(
+				"Nice, you answered all questions!",
 				fmt.Sprintf("\nYour score: %v/%v", total, len(records)),
 			)
 			return
@@ -32,12 +40,13 @@ func main() {
 	}
 }
 
-func quizLoop(records [][]string, answersChannel chan int) {
+func quizLoop(records [][]string, answersChannel chan int, done chan bool) {
 	for _, record := range records {
 		question, answer := record[0], record[1]
 		fmt.Print(question, "= ")
 		answersChannel <- checkAnswer(answer)
 	}
+	done <- true
 }
 
 func getQuestions() [][]string {
